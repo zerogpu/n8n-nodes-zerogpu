@@ -30,6 +30,52 @@ be approved
 - Never output `Wordpress`-specific code unless the project is actually about
   WordPress.
 
+## ZeroGPU
+This package is the official n8n integration for ZeroGPU, a compute-efficient
+inference provider that runs small and nano language models on an edge network.
+Check https://docs.zerogpu.ai/llms.txt for the current docs index before adding
+a node.
+
+### API
+- Base URL: `https://api.zerogpu.ai/v1`. It is OpenAI-compatible
+- Auth: `x-api-key: <key>` or `Authorization: Bearer <key>` on inference
+  endpoints. The Batch and Files APIs accept `x-api-key` only
+- Inference endpoints (all POST): `/responses`, `/chat/completions`,
+  `/moderations`, `/systemone`, `/embeddings`, `/audio/transcriptions`,
+  `/audio/speech`
+- Batch and Files: `/files`, `/batches`
+- `GET /v1/models` is public, so it can't validate an API key
+
+### Adding a node
+- Name it `nodes/ZeroGpu<Thing>/ZeroGpu<Thing>.node.ts`, with class
+  `ZeroGpu<Thing>`, `name: 'zeroGpu<Thing>'` and display name `ZeroGPU <Thing>`.
+  Acronyms are camelCased, like n8n's `openAiApi`
+- Reuse the `zeroGpuApi` credential instead of adding another one
+- Reuse the icons in `icons/`
+- Register the node in `n8n.nodes` in `package.json`
+- `nodes/ZeroGpu` is a placeholder, needed because n8n refuses to install a
+  package with no nodes. Remove it when the first real node lands, including its
+  `package.json` entry and the "early release" status in `README.md`
+- For a chat model node, add `"@n8n/ai-node-sdk": "*"` to `peerDependencies` and
+  `"aiNodeSdkVersion": 1` to the `n8n` section (lint requires both together).
+  Start from the CLI template in
+  `node_modules/@n8n/node-cli/dist/template/templates/programmatic/ai/model-openai-compatible`
+
+### Releasing
+- Run `npm run release` on an up-to-date `main`. It bumps the version, updates
+  `CHANGELOG.md`, commits, tags and pushes directly to `main`, so don't add
+  branch protection that blocks those pushes
+- Set `GITHUB_TOKEN=$(gh auth token)` so the GitHub release is created without
+  opening a browser
+- The pushed tag triggers `.github/workflows/publish.yml`, which publishes with
+  provenance using npm trusted publishing. No npm token or npm login is needed
+- Keep the workflow filename `publish.yml`, because the trusted publisher on npm
+  is tied to it
+- Keep `publishConfig.access: public`. npm refuses provenance on a new scoped
+  package without it
+- `0.1.0` has no git tag because it was bootstrapped by hand. Don't create that
+  tag, because pushing it would re-trigger the publish workflow
+
 ## Project structure
 There are two main folders in this project:
 - `nodes` contains all of the nodes in a package (there can be more than 1).

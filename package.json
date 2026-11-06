@@ -1,19 +1,28 @@
 {
 	"name": "@zerogpu/n8n-nodes-zerogpu",
 	"version": "0.1.0",
-	"description": "",
+	"description": "Official ZeroGPU nodes for n8n. ZeroGPU is a compute-efficient inference provider for apps and agents — purpose-built small and nano language models on an edge network that run the repeatable tasks frontier models shouldn’t, ~10x faster and 50%+ cheaper. Auto-scaling, with zero GPU infrastructure. Plug in and you’re live.",
 	"license": "MIT",
-	"homepage": "",
+	"homepage": "https://zerogpu.ai",
 	"keywords": [
-		"n8n-community-node-package"
+		"n8n-community-node-package",
+		"n8n",
+		"zerogpu",
+		"inference",
+		"small-language-models",
+		"ai"
 	],
 	"author": {
-		"name": "Amaan",
-		"email": "amaan@ai20labs.com"
+		"name": "ZeroGPU",
+		"email": "hello@zerogpu.ai",
+		"url": "https://zerogpu.ai"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/<...>/n8n-nodes-<...>.git"
+		"url": "git+https://github.com/zerogpu/n8n-nodes-zerogpu.git"
+	},
+	"publishConfig": {
+		"access": "public"
 	},
 	"scripts": {
 		"build": "n8n-node build",
@@ -29,13 +38,12 @@
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
-		"aiNodeSdkVersion": 1,
 		"strict": true,
 		"credentials": [
-			"dist/credentials/ExampleApi.credentials.js"
+			"dist/credentials/ZeroGpuApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/ExampleChatModel/ExampleChatModel.node.js"
+			"dist/nodes/ZeroGpu/ZeroGpu.node.js"
 		]
 	},
 	"devDependencies": {
@@ -46,7 +54,6 @@
 		"typescript": "5.9.2"
 	},
 	"peerDependencies": {
-		"n8n-workflow": "*",
-		"@n8n/ai-node-sdk": "*"
+		"n8n-workflow": "*"
 	}
 }
