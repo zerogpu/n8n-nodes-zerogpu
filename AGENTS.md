@@ -62,19 +62,28 @@ a node.
   `node_modules/@n8n/node-cli/dist/template/templates/programmatic/ai/model-openai-compatible`
 
 ### Releasing
-- Run `npm run release` on an up-to-date `main`. It bumps the version, updates
-  `CHANGELOG.md`, commits, tags and pushes directly to `main`, so don't add
-  branch protection that blocks those pushes
-- Set `GITHUB_TOKEN=$(gh auth token)` so the GitHub release is created without
-  opening a browser
-- The pushed tag triggers `.github/workflows/publish.yml`, which publishes with
-  provenance using npm trusted publishing. No npm token or npm login is needed
-- Keep the workflow filename `publish.yml`, because the trusted publisher on npm
-  is tied to it
+- A release is a version bump in `package.json` that reaches `main`. Every push
+  to `main` runs `.github/workflows/publish.yml`: lint, build, then publish that
+  exact version if it isn't on npm yet (otherwise the run is a no-op). Same
+  mechanics as `@zerogpu/ai-sdk-provider`
+- Either open a PR that bumps the version, or run `npm run release` on an
+  up-to-date `main`. That command bumps the version, updates `CHANGELOG.md`,
+  commits, tags and pushes directly to `main`, so don't add branch protection
+  that blocks those pushes. Set `GITHUB_TOKEN=$(gh auth token)` so it creates
+  the GitHub release without opening a browser
+- The workflow publishes with npm provenance through OIDC trusted publishing.
+  No npm token or npm login is involved. n8n only verifies community nodes
+  published that way (required since May 1 2026), so never publish a release
+  version from a laptop; `prepublishOnly` (`n8n-node prerelease`) blocks that
+  unless `RELEASE_MODE=true`
+- Keep the workflow filename `publish.yml` and the GitHub environment `prod`,
+  because the trusted publisher on npm is pinned to both
 - Keep `publishConfig.access: public`. npm refuses provenance on a new scoped
   package without it
-- `0.1.0` has no git tag because it was bootstrapped by hand. Don't create that
-  tag, because pushing it would re-trigger the publish workflow
+- `0.1.0-bootstrap.0` (dist-tag `bootstrap`) was published by hand on
+  2026-11-06 only so the package existed and a trusted publisher could be
+  attached. It has no provenance and no git tag. Don't tag it and don't repeat
+  that for any other version
 
 ## Project structure
 There are two main folders in this project:
