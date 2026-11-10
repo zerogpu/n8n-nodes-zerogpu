@@ -62,27 +62,29 @@ a node.
   `node_modules/@n8n/node-cli/dist/template/templates/programmatic/ai/model-openai-compatible`
 
 ### Releasing
-- A release is a version bump in `package.json` that reaches `main`. Every push
-  to `main` runs `.github/workflows/publish.yml`: lint, build, then publish that
-  exact version if it isn't on npm yet (otherwise the run is a no-op). Same
-  mechanics as `@zerogpu/ai-sdk-provider`
-- Either open a PR that bumps the version, or run `npm run release` on an
-  up-to-date `main`. That command bumps the version, updates `CHANGELOG.md`,
-  commits, tags and pushes directly to `main`, so don't add branch protection
-  that blocks those pushes. Set `GITHUB_TOKEN=$(gh auth token)` so it creates
-  the GitHub release without opening a browser
-- The workflow publishes with npm provenance through OIDC trusted publishing.
-  No npm token or npm login is involved. n8n only verifies community nodes
-  published that way (required since May 1 2026), so never publish a release
-  version from a laptop; `prepublishOnly` (`n8n-node prerelease`) blocks that
-  unless `RELEASE_MODE=true`
+Follow n8n's documented process:
+https://docs.n8n.io/integrations/creating-nodes/deploy/submit-community-nodes/
+- Don't change `version` in feature PRs. Merge work to `main`, then release
+- Run `GITHUB_TOKEN=$(gh auth token) npm run release` on an up-to-date `main`.
+  It runs lint and build, asks for the version bump, writes `CHANGELOG.md`,
+  commits, tags, pushes directly to `main` and creates the GitHub release. Don't
+  add branch protection that blocks those pushes
+- Don't edit `CHANGELOG.md` by hand. Each release regenerates the whole file
+  from git tags and PR titles, so write PR titles for users
+- The pushed tag triggers `.github/workflows/publish.yml`, which publishes with
+  provenance through npm trusted publishing. No npm token or npm login is
+  involved. n8n only verifies community nodes published that way (required since
+  May 1 2026), so never publish a release version from a laptop;
+  `prepublishOnly` (`n8n-node prerelease`) blocks that unless `RELEASE_MODE=true`
+- `publish.yml` is n8n's starter workflow from `n8n-io/n8n-nodes-starter`. The
+  only change is `environment: prod`. Keep it in sync with the starter
 - Keep the workflow filename `publish.yml` and the GitHub environment `prod`,
   because the trusted publisher on npm is pinned to both
 - Keep `publishConfig.access: public`. npm refuses provenance on a new scoped
   package without it
-- `0.1.0-bootstrap.0` (dist-tag `bootstrap`) was published by hand on
-  2026-11-06 only so the package existed and a trusted publisher could be
-  attached. It has no provenance and no git tag. Don't tag it and don't repeat
+- `0.0.0-stage` and `0.1.0-bootstrap.0` were published by hand on 2026-11-06 only
+  so the package existed and a trusted publisher could be attached. Both are
+  deprecated and have no provenance or git tag. Don't tag them and don't repeat
   that for any other version
 
 ## Project structure
