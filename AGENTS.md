@@ -53,9 +53,6 @@ a node.
 - Reuse the `zeroGpuApi` credential instead of adding another one
 - Reuse the icons in `icons/`
 - Register the node in `n8n.nodes` in `package.json`
-- `nodes/ZeroGpu` is a placeholder, needed because n8n refuses to install a
-  package with no nodes. Remove it when the first real node lands, including its
-  `package.json` entry and the "early release" status in `README.md`
 - For a chat model node, add `"@n8n/ai-node-sdk": "*"` to `peerDependencies` and
   `"aiNodeSdkVersion": 1` to the `n8n` section (lint requires both together).
   Start from the CLI template in

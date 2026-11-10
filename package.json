@@ -39,11 +39,12 @@
 	"n8n": {
 		"n8nNodesApiVersion": 1,
 		"strict": true,
+		"aiNodeSdkVersion": 1,
 		"credentials": [
 			"dist/credentials/ZeroGpuApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/ZeroGpu/ZeroGpu.node.js"
+			"dist/nodes/ZeroGpuChatModel/ZeroGpuChatModel.node.js"
 		]
 	},
 	"devDependencies": {
@@ -54,6 +55,7 @@
 		"typescript": "5.9.2"
 	},
 	"peerDependencies": {
-		"n8n-workflow": "*"
+		"n8n-workflow": "*",
+		"@n8n/ai-node-sdk": "*"
 	}
 }
