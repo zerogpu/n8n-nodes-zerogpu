@@ -7,21 +7,29 @@ import type {
 	INodePropertyRouting,
 } from 'n8n-workflow';
 import { jsonParse, NodeOperationError } from 'n8n-workflow';
-import type { Operation } from './operations';
+import type { AudioOperation, Operation } from './operations';
 
 const SUMMARY_PROMPT =
 	"Summarize the user's text faithfully and concisely. Reply with the summary only.";
 
 type Message = { role: 'system' | 'user'; content: string | IDataObject[] };
 
-function fail(context: IExecuteSingleFunctions, message: string, description?: string): never {
+export function fail(
+	context: IExecuteSingleFunctions,
+	message: string,
+	description?: string,
+): never {
 	throw new NodeOperationError(context.getNode(), message, {
 		itemIndex: context.getItemIndex(),
 		description,
 	});
 }
 
-function getRequiredString(context: IExecuteSingleFunctions, name: string, label: string): string {
+export function getRequiredString(
+	context: IExecuteSingleFunctions,
+	name: string,
+	label: string,
+): string {
 	const value = String(context.getNodeParameter(name) ?? '');
 	if (value.trim() === '') fail(context, `Enter the ${label}`);
 	return value;
@@ -79,7 +87,10 @@ function chatBody(model: string, messages: Message[], metadata?: IDataObject): I
 	return metadata ? { model, messages, metadata } : { model, messages };
 }
 
-function buildBody(context: IExecuteSingleFunctions, operation: Operation): IDataObject {
+function buildBody(
+	context: IExecuteSingleFunctions,
+	operation: Exclude<Operation, AudioOperation>,
+): IDataObject {
 	const model = getRequiredString(context, 'model', 'Model');
 	const user = (content: string): Message => ({ role: 'user', content });
 	const text = () => user(getRequiredString(context, 'text', 'Text'));
@@ -132,7 +143,10 @@ export async function buildRequestBody(
 	this: IExecuteSingleFunctions,
 	requestOptions: IHttpRequestOptions,
 ): Promise<IHttpRequestOptions> {
-	requestOptions.body = buildBody(this, this.getNodeParameter('operation') as Operation);
+	requestOptions.body = buildBody(
+		this,
+		this.getNodeParameter('operation') as Exclude<Operation, AudioOperation>,
+	);
 	return requestOptions;
 }
 

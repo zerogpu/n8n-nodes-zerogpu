@@ -1,5 +1,6 @@
 import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from 'n8n-workflow';
 import { getModels } from './loadOptions/getModels';
+import { audioDescription } from './resources/audio';
 import { classificationDescription } from './resources/classification';
 import { documentDescription } from './resources/document';
 import { embeddingDescription } from './resources/embedding';
@@ -16,7 +17,7 @@ export class ZeroGpu implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description:
-			'Classify, extract, redact, moderate, summarize and embed text, and read documents, with ZeroGPU models',
+			'Classify, extract, redact, moderate, summarize and embed text, read documents, and generate or transcribe speech with ZeroGPU models',
 		defaults: {
 			name: 'ZeroGPU',
 		},
@@ -43,6 +44,7 @@ export class ZeroGpu implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{ name: 'Audio', value: 'audio' },
 					{ name: 'Classification', value: 'classification' },
 					{ name: 'Document', value: 'document' },
 					{ name: 'Embedding', value: 'embedding' },
@@ -52,6 +54,7 @@ export class ZeroGpu implements INodeType {
 				],
 				default: 'classification',
 			},
+			...audioDescription,
 			...classificationDescription,
 			...documentDescription,
 			...embeddingDescription,

@@ -1,6 +1,10 @@
 import { OCR_MODEL_ID, type ZeroGpuModel } from '../../shared/models';
 
+// Audio operations send and receive files, so they're built in `audio.ts` rather than `routing.ts`.
+export type AudioOperation = 'generateSpeech' | 'transcribe' | 'translate';
+
 export type Operation =
+	| AudioOperation
 	| 'classifyByLabels'
 	| 'classifyBySchema'
 	| 'classifyDomain'
@@ -30,7 +34,10 @@ export const MODEL_FILTERS: Record<Operation, (model: ZeroGpuModel) => boolean> 
 	extractEntities: hasUsecase('ner'),
 	extractJson: hasUsecase('json'),
 	extractText: ({ modelId }) => modelId === OCR_MODEL_ID,
+	generateSpeech: ({ taskType }) => taskType === 'speech',
 	moderate: ({ taskType }) => taskType === 'moderation',
 	redactPii: hasUsecase('ner'),
 	summarize: ({ taskDisplayName }) => taskDisplayName === 'Summarization',
+	transcribe: ({ taskType }) => taskType === 'transcription',
+	translate: ({ taskType }) => taskType === 'transcription',
 };

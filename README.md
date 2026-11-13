@@ -35,7 +35,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 The package has three nodes:
 
-- **ZeroGPU** runs ZeroGPU's task models on text and documents. Use it as a step in any workflow, or attach it to an AI Agent as **ZeroGPU Tool**.
+- **ZeroGPU** runs ZeroGPU's task models on text, documents and audio. Use it as a step in any workflow, or attach it to an AI Agent as **ZeroGPU Tool**.
 - **ZeroGPU Chat Model** connects ZeroGPU's language models to n8n's AI nodes, such as AI Agent and Basic LLM Chain.
 - **ZeroGPU Embeddings** connects ZeroGPU's embedding models to n8n's vector stores, for semantic search and RAG.
 
@@ -43,6 +43,9 @@ The **ZeroGPU** node has these operations:
 
 | Resource       | Operation             | Returns                                                                         | Default model                  |
 | -------------- | --------------------- | ------------------------------------------------------------------------------- | ------------------------------ |
+| Audio          | Generate Speech       | Spoken audio of the text, as a binary file                                      | `chatterbox-nano`              |
+|                | Transcribe Audio      | The text of the speech in an audio file                                         | `whisper-tiny`                 |
+|                | Translate Audio       | The speech in an audio file, as English text                                    | `whisper-tiny`                 |
 | Classification | Classify by Labels    | A score for each label                                                          | `deberta-v3-small`             |
 |                | Classify by Schema    | One label for each category                                                     | `gliner2.5-base-v1`            |
 |                | Classify Domain       | IAB categories, audiences and topics for a domain name                          | `zlm-v1-iab-domain-classifier` |
@@ -81,8 +84,13 @@ Some fields take a particular format:
 - **Schema** for **Extract JSON**: a JSON object that maps each group to its fields, written as `name::type::description`, like `{"contact": ["name::str::Full name", "email::str::Email address"]}`.
 - **Threshold**, under **Options**: the minimum confidence, from 0 to 1, for a label or entity to be returned. Lower it to find more.
 - **Document URL**: the public URL of a PDF, scanned document or image. ZeroGPU bills **Extract Text** per page.
+- **Input Data Field Name** for **Transcribe Audio** and **Translate Audio**: the binary field that holds the audio file, `data` by default, like the output of a **Read/Write Files from Disk** or **HTTP Request** node. The file can be up to 25 MB and 10 minutes long, in flac, m4a, mp3, mp4, mpeg, mpga, oga, ogg, wav or webm.
+- **Text** for **Generate Speech**: English text up to 2,000 characters. Tags like `[laugh]` or `[cough]` add cues.
+- **Voice Sample Field**, under **Options** for **Generate Speech**: the binary field that holds a 6 to 30 second clip of the voice to clone, up to 10 MB. Leave it empty to use the built-in voice.
 
 **Redact PII** replaces every place each value it finds appears, so a name mentioned three times is replaced three times. It only finds the types listed in **Labels**.
+
+**Generate Speech** puts the audio in the `data` binary field, or the field set in **Put Output in Field**, and returns its length in seconds as `durationSeconds`. ZeroGPU bills audio per minute. `whisper-tiny` and `chatterbox-nano` round up to the next whole minute, with a one-minute minimum, and `chatterbox` rounds up to the next second.
 
 ### ZeroGPU Tool
 
@@ -93,6 +101,8 @@ Attach the **ZeroGPU** node to an AI Agent so the agent can call it:
 3. For each field the agent should fill in, such as **Text**, click **Let the model define this parameter** next to it. Leave fields like **Model** and **Labels** fixed if the agent shouldn't change them.
 
 n8n describes the tool to the agent based on its operation. To write the description yourself, set **Tool Description** to **Set Manually**.
+
+The **Audio** operations read or write binary files, which an agent can't pass to a tool, so use them as regular workflow steps instead.
 
 ### ZeroGPU Chat Model
 
@@ -130,16 +140,21 @@ To get vectors in a regular workflow instead, use the **Embed Text** operation o
 
 If n8n shows a general error in any node, open its details to see ZeroGPU's message:
 
-| Message                                                                                                 | What to do                                                                                                         |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `Invalid credentials`                                                                                   | Check the API key in your **ZeroGPU API** credential.                                                              |
-| `Model not found`                                                                                       | Check the model ID, including its capitalization.                                                                  |
-| `Tool calling is not supported for model`                                                               | Choose another model, or use a Basic LLM Chain.                                                                    |
-| `doesn't support Maximum Tokens`, `doesn't support Reasoning Effort` or `Unsupported parameter`         | Remove that setting under **Options**, or choose another model.                                                    |
-| `Upstream inference failed`                                                                             | ZeroGPU couldn't run the model this time. Run the node again, or turn on **Retry On Fail** in the node's settings. |
-| `Model not supported` or `Unsupported usecase`                                                          | Choose a model from the list for the operation.                                                                    |
-| `Enter at least one label`, `Schema must be a JSON object…` or `Threshold must be a number from 0 to 1` | Fix the field named in the message.                                                                                |
-| `Invalid document at index` or `Cannot embed empty or undefined text`                                   | A text sent to **ZeroGPU Embeddings** was empty. Check the data loader or expression that supplies it.             |
+| Message                                                                                                   | What to do                                                                                                         |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Invalid credentials`                                                                                     | Check the API key in your **ZeroGPU API** credential.                                                              |
+| `Model not found`                                                                                         | Check the model ID, including its capitalization.                                                                  |
+| `Tool calling is not supported for model`                                                                 | Choose another model, or use a Basic LLM Chain.                                                                    |
+| `doesn't support Maximum Tokens`, `doesn't support Reasoning Effort` or `Unsupported parameter`           | Remove that setting under **Options**, or choose another model.                                                    |
+| `Upstream inference failed`                                                                               | ZeroGPU couldn't run the model this time. Run the node again, or turn on **Retry On Fail** in the node's settings. |
+| `Model is not loaded`                                                                                     | The model is starting up. Run the node again in a moment, or turn on **Retry On Fail** in the node's settings.     |
+| `Model not supported` or `Unsupported usecase`                                                            | Choose a model from the list for the operation.                                                                    |
+| `Enter the …`, `Enter at least one label`, `Schema must be a JSON object…` or `… must be a number from …` | Fix the field named in the message.                                                                                |
+| `The item has no binary field`                                                                            | Make **Input Data Field Name** or **Voice Sample Field** match a binary field from the previous node.              |
+| `exceeds the 2000 character limit`                                                                        | Split the text and generate speech for each part.                                                                  |
+| `file_too_large`, `audio_too_long`, `voice_sample_too_large` or `voice_sample_too_long`                   | Use audio up to 25 MB and 10 minutes long, and a voice clip up to 10 MB and 30 seconds long.                       |
+| `voice_conditioning_failed`                                                                               | ZeroGPU couldn't clone the voice from the clip. Try another clip of 6 to 30 seconds.                               |
+| `Invalid document at index` or `Cannot embed empty or undefined text`                                     | A text sent to **ZeroGPU Embeddings** was empty. Check the data loader or expression that supplies it.             |
 
 ## Compatibility
 
