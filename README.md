@@ -33,11 +33,30 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-**ZeroGPU Chat Model** connects ZeroGPU's language models to n8n's AI nodes, such as AI Agent and Basic LLM Chain. More ZeroGPU models and operations will arrive in later releases.
+The package has two nodes:
+
+- **ZeroGPU** runs ZeroGPU's task models on text and documents. Use it as a step in any workflow, or attach it to an AI Agent as **ZeroGPU Tool**.
+- **ZeroGPU Chat Model** connects ZeroGPU's language models to n8n's AI nodes, such as AI Agent and Basic LLM Chain.
+
+The **ZeroGPU** node has these operations:
+
+| Resource       | Operation             | Returns                                                                         | Default model                  |
+| -------------- | --------------------- | ------------------------------------------------------------------------------- | ------------------------------ |
+| Classification | Classify by Labels    | A score for each label                                                          | `deberta-v3-small`             |
+|                | Classify by Schema    | One label for each category                                                     | `gliner2.5-base-v1`            |
+|                | Classify Domain       | IAB categories, audiences and topics for a domain name                          | `zlm-v1-iab-domain-classifier` |
+|                | Classify IAB Category | IAB content and audience categories                                             | `zlm-v1-iab-classify-edge`     |
+| Document       | Extract Text          | The document's text as Markdown                                                 | `unlimited-ocr`                |
+| Extraction     | Detect PII            | The personal data found, grouped by type                                        | `gliner2.5-base-v1`            |
+|                | Extract Entities      | The entities found, grouped by type                                             | `gliner2.5-base-v1`            |
+|                | Extract JSON          | The fields in your schema, filled in from the text                              | `gliner2.5-base-v1`            |
+|                | Redact PII            | The text with personal data replaced by tags like `[EMAIL]`, and what was found | `gliner2.5-base-v1`            |
+| Moderation     | Moderate Text         | Whether the text is flagged, with a score for each safety category              | `zlm-v1-moderation-edge`       |
+| Summarization  | Summarize Text        | A short summary                                                                 | `llama-3.1-8b-instruct-fast`   |
 
 ## Credentials
 
-The package includes a **ZeroGPU API** credential, which the ZeroGPU Chat Model node uses to call ZeroGPU:
+The package includes a **ZeroGPU API** credential, which both nodes use to call ZeroGPU:
 
 1. Log in to the [ZeroGPU dashboard](https://platform.zerogpu.ai/dashboard).
 2. Copy a key from the **API Keys** page.
@@ -47,9 +66,37 @@ n8n checks the key when you save the credential. The check doesn't run any infer
 
 ## Usage
 
+### ZeroGPU
+
+1. Add a **ZeroGPU** node to your workflow and select your **ZeroGPU API** credential.
+2. Choose a **Resource** and an **Operation**.
+3. Choose a model. The list shows the ZeroGPU models that can run the operation and comes from ZeroGPU, so it stays current as models are added. To use a model that isn't listed, switch **Model** to an expression and enter its ID.
+
+Some fields take a particular format:
+
+- **Labels**: separate the labels with commas, like `positive, negative, neutral`. A label can't contain a comma. **Detect PII** and **Redact PII** start with common types of personal data. Edit the list to find other types.
+- **Schema** for **Classify by Schema**: a JSON object that maps each category to the labels to choose from, like `{"sentiment": ["positive", "negative", "neutral"], "topic": ["billing", "support"]}`.
+- **Schema** for **Extract JSON**: a JSON object that maps each group to its fields, written as `name::type::description`, like `{"contact": ["name::str::Full name", "email::str::Email address"]}`.
+- **Threshold**, under **Options**: the minimum confidence, from 0 to 1, for a label or entity to be returned. Lower it to find more.
+- **Document URL**: the public URL of a PDF, scanned document or image. ZeroGPU bills **Extract Text** per page.
+
+**Redact PII** replaces every place each value it finds appears, so a name mentioned three times is replaced three times. It only finds the types listed in **Labels**.
+
+### ZeroGPU Tool
+
+Attach the **ZeroGPU** node to an AI Agent so the agent can call it:
+
+1. In an **AI Agent** node, click **+** under **Tool**, search for **ZeroGPU** and choose **ZeroGPU Tool**.
+2. Select your credential, then choose a **Resource** and an **Operation**. Each tool runs one operation, so add a tool for each operation the agent should use.
+3. For each field the agent should fill in, such as **Text**, click **Let the model define this parameter** next to it. Leave fields like **Model** and **Labels** fixed if the agent shouldn't change them.
+
+n8n describes the tool to the agent based on its operation. To write the description yourself, set **Tool Description** to **Set Manually**.
+
+### ZeroGPU Chat Model
+
 1. Add an **AI Agent** or **Basic LLM Chain** node to your workflow.
 2. Connect a **ZeroGPU Chat Model** node to its **Chat Model** input and select your **ZeroGPU API** credential.
-3. Choose a model. The list comes from ZeroGPU, so it stays current as models are added. To use a model that isn't listed, switch **Model** to an expression and enter its ID. Model IDs are case-sensitive.
+3. Choose a model. The list shows ZeroGPU's text generation and summarization models and comes from ZeroGPU, so it stays current as models are added. To use a model that isn't listed, switch **Model** to an expression and enter its ID. Model IDs are case-sensitive.
 
 Each setting under **Options** is sent only if you add it:
 
@@ -61,18 +108,23 @@ Each setting under **Options** is sent only if you add it:
 
 Some models have limits:
 
-- Models labelled **no tool calling** can't use AI Agent tools or return schema-validated JSON. Use them in a Basic LLM Chain, or choose another model for an agent with tools.
-- If you set **Maximum Tokens** or **Reasoning Effort** on a model that doesn't support it, the node stops with an error.
+- Some models can't use AI Agent tools or return schema-validated JSON, and stop with `Tool calling is not supported for model`. Models labelled **no tool calling** are among them. Use them in a Basic LLM Chain, or choose another model for an agent with tools.
+- If you set **Maximum Tokens** or **Reasoning Effort** on a model that doesn't support it, the node stops with an error. A few models accept a setting and ignore it instead: **Reasoning Effort** on `gpt-4.1-mini` and `llama-3.1-8b-instruct-fast`, and **Maximum Tokens** on `zlm-v1-tool-decisions`.
 - `gpt-6-luna` only accepts its default temperature, so leave **Sampling Temperature** unset.
 
-If n8n shows a general error, open its details to see ZeroGPU's message:
+### Errors
 
-| Message                                                                | What to do                                                      |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `Invalid credentials`                                                  | Check the API key in your **ZeroGPU API** credential.           |
-| `Model not found`                                                      | Check the model ID, including its capitalization.               |
-| `Tool calling is not supported for model`                              | Choose a model that isn't labelled **no tool calling**.         |
-| `doesn't support Maximum Tokens` or `doesn't support Reasoning Effort` | Remove that setting under **Options**, or choose another model. |
+If n8n shows a general error in either node, open its details to see ZeroGPU's message:
+
+| Message                                                                                                 | What to do                                                                                                         |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Invalid credentials`                                                                                   | Check the API key in your **ZeroGPU API** credential.                                                              |
+| `Model not found`                                                                                       | Check the model ID, including its capitalization.                                                                  |
+| `Tool calling is not supported for model`                                                               | Choose another model, or use a Basic LLM Chain.                                                                    |
+| `doesn't support Maximum Tokens`, `doesn't support Reasoning Effort` or `Unsupported parameter`         | Remove that setting under **Options**, or choose another model.                                                    |
+| `Upstream inference failed`                                                                             | ZeroGPU couldn't run the model this time. Run the node again, or turn on **Retry On Fail** in the node's settings. |
+| `Model not supported` or `Unsupported usecase`                                                          | Choose a model from the list for the operation.                                                                    |
+| `Enter at least one label`, `Schema must be a JSON object…` or `Threshold must be a number from 0 to 1` | Fix the field named in the message.                                                                                |
 
 ## Compatibility
 

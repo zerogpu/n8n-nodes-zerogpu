@@ -44,6 +44,7 @@
 			"dist/credentials/ZeroGpuApi.credentials.js"
 		],
 		"nodes": [
+			"dist/nodes/ZeroGpu/ZeroGpu.node.js",
 			"dist/nodes/ZeroGpuChatModel/ZeroGpuChatModel.node.js"
 		]
 	},
