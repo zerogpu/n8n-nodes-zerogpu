@@ -45,7 +45,8 @@
 		],
 		"nodes": [
 			"dist/nodes/ZeroGpu/ZeroGpu.node.js",
-			"dist/nodes/ZeroGpuChatModel/ZeroGpuChatModel.node.js"
+			"dist/nodes/ZeroGpuChatModel/ZeroGpuChatModel.node.js",
+			"dist/nodes/ZeroGpuEmbeddings/ZeroGpuEmbeddings.node.js"
 		]
 	},
 	"devDependencies": {
