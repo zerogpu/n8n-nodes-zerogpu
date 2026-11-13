@@ -8,16 +8,11 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { supplyModel } from '@n8n/ai-node-sdk';
+import { fetchModels, OCR_MODEL_ID, type ZeroGpuModel } from '../shared/models';
 
 const BASE_URL = 'https://api.zerogpu.ai/v1';
-const MODELS_URL = 'https://api-dashboard.zerogpu.ai/api/models';
 
-type ZeroGpuModel = {
-	modelId: string;
-	modelDisplayName: string;
-	pricing?: { description?: string } | null;
-	chat?: { tools: boolean; maxTokens: boolean; reasoningEffort: boolean } | null;
-};
+const CHAT_TASKS = ['Text Generation', 'Summarization'];
 
 type ModelOptions = {
 	maxTokens?: number;
@@ -25,17 +20,16 @@ type ModelOptions = {
 	temperature?: number;
 };
 
-// The model list is public, so this sends no credentials and the API key stays on api.zerogpu.ai.
-async function fetchModels(
-	context: ILoadOptionsFunctions | ISupplyDataFunctions,
-): Promise<ZeroGpuModel[]> {
-	const response = (await context.helpers.httpRequest({
-		method: 'GET',
-		url: MODELS_URL,
-		json: true,
-	})) as { models?: ZeroGpuModel[] };
+// `chat: null` marks a model that can't chat. Until the model list reports `chat`, the text
+// generation task groups stand in, minus the models in them that reject chat requests.
+function isChatModel({ chat, taskDisplayName, taskType, modelId }: ZeroGpuModel): boolean {
+	if (chat !== undefined) return chat !== null;
 
-	return response.models ?? [];
+	return (
+		CHAT_TASKS.includes(taskDisplayName ?? '') &&
+		taskType !== 'moderation' &&
+		modelId !== OCR_MODEL_ID
+	);
 }
 
 // Some models accept these settings but silently ignore them, so they must fail here instead.
@@ -169,7 +163,7 @@ export class ZeroGpuChatModel implements INodeType {
 				const models = await fetchModels(this);
 
 				return models
-					.filter(({ chat }) => chat)
+					.filter(isChatModel)
 					.map(({ modelId, modelDisplayName, pricing, chat }) => ({
 						name:
 							chat?.tools === false ? `${modelDisplayName} (no tool calling)` : modelDisplayName,
