@@ -1,6 +1,6 @@
 {
 	"name": "@zerogpu/n8n-nodes-zerogpu",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Official ZeroGPU nodes for n8n. ZeroGPU is a compute-efficient inference provider for apps and agents — purpose-built small and nano language models on an edge network that run the repeatable tasks frontier models shouldn’t, ~10x faster and 50%+ cheaper. Auto-scaling, with zero GPU infrastructure. Plug in and you’re live.",
 	"license": "MIT",
 	"homepage": "https://zerogpu.ai",
