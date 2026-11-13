@@ -6,6 +6,7 @@ export type Operation =
 	| 'classifyDomain'
 	| 'classifyIab'
 	| 'detectPii'
+	| 'embedText'
 	| 'extractEntities'
 	| 'extractJson'
 	| 'extractText'
@@ -25,6 +26,7 @@ export const MODEL_FILTERS: Record<Operation, (model: ZeroGpuModel) => boolean> 
 	classifyDomain: ({ taskType }) => taskType === 'iab_classify_domain',
 	classifyIab: ({ taskType }) => taskType === 'iab_classify',
 	detectPii: hasUsecase('ner'),
+	embedText: ({ taskType }) => taskType === 'embedding',
 	extractEntities: hasUsecase('ner'),
 	extractJson: hasUsecase('json'),
 	extractText: ({ modelId }) => modelId === OCR_MODEL_ID,

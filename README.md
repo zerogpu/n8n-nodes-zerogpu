@@ -33,10 +33,11 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-The package has two nodes:
+The package has three nodes:
 
 - **ZeroGPU** runs ZeroGPU's task models on text and documents. Use it as a step in any workflow, or attach it to an AI Agent as **ZeroGPU Tool**.
 - **ZeroGPU Chat Model** connects ZeroGPU's language models to n8n's AI nodes, such as AI Agent and Basic LLM Chain.
+- **ZeroGPU Embeddings** connects ZeroGPU's embedding models to n8n's vector stores, for semantic search and RAG.
 
 The **ZeroGPU** node has these operations:
 
@@ -47,6 +48,7 @@ The **ZeroGPU** node has these operations:
 |                | Classify Domain       | IAB categories, audiences and topics for a domain name                          | `zlm-v1-iab-domain-classifier` |
 |                | Classify IAB Category | IAB content and audience categories                                             | `zlm-v1-iab-classify-edge`     |
 | Document       | Extract Text          | The document's text as Markdown                                                 | `unlimited-ocr`                |
+| Embedding      | Embed Text            | A vector for the text, in OpenAI's embeddings format                            | `all-minilm-l6-v2`             |
 | Extraction     | Detect PII            | The personal data found, grouped by type                                        | `gliner2.5-base-v1`            |
 |                | Extract Entities      | The entities found, grouped by type                                             | `gliner2.5-base-v1`            |
 |                | Extract JSON          | The fields in your schema, filled in from the text                              | `gliner2.5-base-v1`            |
@@ -56,7 +58,7 @@ The **ZeroGPU** node has these operations:
 
 ## Credentials
 
-The package includes a **ZeroGPU API** credential, which both nodes use to call ZeroGPU:
+The package includes a **ZeroGPU API** credential, which every node in the package uses to call ZeroGPU:
 
 1. Log in to the [ZeroGPU dashboard](https://platform.zerogpu.ai/dashboard).
 2. Copy a key from the **API Keys** page.
@@ -112,9 +114,21 @@ Some models have limits:
 - If you set **Maximum Tokens** or **Reasoning Effort** on a model that doesn't support it, the node stops with an error. A few models accept a setting and ignore it instead: **Reasoning Effort** on `gpt-4.1-mini` and `llama-3.1-8b-instruct-fast`, and **Maximum Tokens** on `zlm-v1-tool-decisions`.
 - `gpt-6-luna` only accepts its default temperature, so leave **Sampling Temperature** unset.
 
+### ZeroGPU Embeddings
+
+1. Add a vector store node, such as **In-Memory Vector Store**, **Pinecone Vector Store** or **Supabase Vector Store**.
+2. Connect a **ZeroGPU Embeddings** node to its **Embedding** input and select your **ZeroGPU API** credential.
+3. Choose a model. The list shows ZeroGPU's embedding models and comes from ZeroGPU, so it stays current as models are added.
+
+Use the same model to insert documents and to search them. `all-minilm-l6-v2` and `bge-small-en-v1.5` both return 384-dimensional vectors, so create your vector index with 384 dimensions. Switching to a model with a different vector size means inserting your documents again.
+
+`all-minilm-l6-v2` reads up to 256 tokens of each text and `bge-small-en-v1.5` up to 512, so split long documents into chunks that fit, for example with a **Recursive Character Text Splitter**. ZeroGPU embeds up to 256 texts per request, and the node splits larger batches for you.
+
+To get vectors in a regular workflow instead, use the **Embed Text** operation of the **ZeroGPU** node. The vector is at `data[0].embedding` in its output.
+
 ### Errors
 
-If n8n shows a general error in either node, open its details to see ZeroGPU's message:
+If n8n shows a general error in any node, open its details to see ZeroGPU's message:
 
 | Message                                                                                                 | What to do                                                                                                         |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -125,6 +139,7 @@ If n8n shows a general error in either node, open its details to see ZeroGPU's m
 | `Upstream inference failed`                                                                             | ZeroGPU couldn't run the model this time. Run the node again, or turn on **Retry On Fail** in the node's settings. |
 | `Model not supported` or `Unsupported usecase`                                                          | Choose a model from the list for the operation.                                                                    |
 | `Enter at least one label`, `Schema must be a JSON object…` or `Threshold must be a number from 0 to 1` | Fix the field named in the message.                                                                                |
+| `Invalid document at index` or `Cannot embed empty or undefined text`                                   | A text sent to **ZeroGPU Embeddings** was empty. Check the data loader or expression that supplies it.             |
 
 ## Compatibility
 

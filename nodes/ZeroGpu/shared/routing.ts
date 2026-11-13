@@ -120,6 +120,7 @@ function buildBody(context: IExecuteSingleFunctions, operation: Operation): IDat
 				{ role: 'user', content: [{ type: 'file', file: { filename, file_data: url } }] },
 			]);
 		}
+		case 'embedText':
 		case 'moderate':
 			return { model, input: getRequiredString(context, 'text', 'Text') };
 		case 'summarize':
@@ -193,6 +194,11 @@ export const chatCompletionsRouting: INodePropertyRouting = {
 	request: { method: 'POST', url: '/chat/completions' },
 	send: { preSend: [buildRequestBody] },
 	output: { postReceive: [parseResult] },
+};
+
+export const embeddingsRouting: INodePropertyRouting = {
+	request: { method: 'POST', url: '/embeddings' },
+	send: { preSend: [buildRequestBody] },
 };
 
 export const moderationsRouting: INodePropertyRouting = {

@@ -2,6 +2,7 @@ import { NodeConnectionTypes, type INodeType, type INodeTypeDescription } from '
 import { getModels } from './loadOptions/getModels';
 import { classificationDescription } from './resources/classification';
 import { documentDescription } from './resources/document';
+import { embeddingDescription } from './resources/embedding';
 import { extractionDescription } from './resources/extraction';
 import { moderationDescription } from './resources/moderation';
 import { summarizationDescription } from './resources/summarization';
@@ -15,7 +16,7 @@ export class ZeroGpu implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description:
-			'Classify, extract, redact, moderate and summarize text, and read documents, with ZeroGPU models',
+			'Classify, extract, redact, moderate, summarize and embed text, and read documents, with ZeroGPU models',
 		defaults: {
 			name: 'ZeroGPU',
 		},
@@ -44,6 +45,7 @@ export class ZeroGpu implements INodeType {
 				options: [
 					{ name: 'Classification', value: 'classification' },
 					{ name: 'Document', value: 'document' },
+					{ name: 'Embedding', value: 'embedding' },
 					{ name: 'Extraction', value: 'extraction' },
 					{ name: 'Moderation', value: 'moderation' },
 					{ name: 'Summarization', value: 'summarization' },
@@ -52,6 +54,7 @@ export class ZeroGpu implements INodeType {
 			},
 			...classificationDescription,
 			...documentDescription,
+			...embeddingDescription,
 			...extractionDescription,
 			...moderationDescription,
 			...summarizationDescription,
